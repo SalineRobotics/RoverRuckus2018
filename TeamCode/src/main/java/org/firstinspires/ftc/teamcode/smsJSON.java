@@ -1,19 +1,18 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.os.Bundle;
-
 import com.qualcomm.robotcore.util.ReadWriteFile;
 
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.io.File;
 
 /**
  * Created by SalineRobotics on 11/12/2017.
  */
 
-public class Settings {
+public class smsJSON {
 
     private JSONObject jsonXSettings;
 

@@ -1,68 +1,42 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.ColorSensor;
+
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.RelicRecoveryVuMark;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
-
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.internal.opmode.OpModeManagerImpl;
 
 import static com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.BRAKE;
 
 
-public class SalineLinearOpmode extends LinearOpMode {
+public class smsAuton extends LinearOpMode {
+
+    smsHardware robot = new smsHardware();   // Use a Pushbot's hardware
+    smsJSON settings = new smsJSON();
+    ElapsedTime runtime = new ElapsedTime();
 
     static final double HEADING_THRESHOLD = 3;      // As tight as we can make it with an integer gyro
     static final double P_TURN_COEFF = 0.15;     // Larger is more responsive, but also less stable
-    DcMotor leftMotor = null;
-    DcMotor rightMotor = null;
-    BNO055IMU imu = null;                    // Additional Gyro device
+    //DcMotor leftMotor = null;
+    //DcMotor rightMotor = null;
+    //BNO055IMU imu = null;                    // Additional Gyro device
     int CryptoBoxOffset = 0;
-    VuforiaLocalizer RobotVision; // The Vuforia application.
-    VuforiaTrackables relicTrackables; // The Relic image resource file.
-    VuforiaTrackable relicTemplate; // The image referenced in the resource file.
-
-    Settings testset = new Settings();
+    //VuforiaLocalizer RobotVision; // The Vuforia application.
+    //VuforiaTrackables relicTrackables; // The Relic image resource file.
+    //VuforiaTrackable relicTemplate; // The image referenced in the resource file.
 
     @Override
     public void runOpMode() {
 
+        robot.init(hardwareMap, true);
 
-        // Initialize the Vuforia parameter object. The parameter object is used to configure the vision app (example: (pass valid licence key), (front or back camera), etc.)
-        VuforiaLocalizer.Parameters parametersV = new VuforiaLocalizer.Parameters();
-
-        // Give Vuforia the team specific licence key.
-        parametersV.vuforiaLicenseKey = "AXKT92L/////AAAAGS+ZuWWofUShhb1MB4+Zbic/fnrONEJsEKNCY4RE1F7X8GaFg4EQYqHF4GMlj35ZJdzZ/LQlnXVV2WlhqhHR5IDlScqWtishwl2yPBRzCXAWYP5MCphLOigzPcshkggMYEKQWxwlhvoc2lsN+54KexfxlI0ss9cMq+unSD8ZZ5Of5OuY0lX7DWAEEPh1KsdeEU7EkCGP96f5TQI518LsriyHeg73KgDLCcGd0yBUSuGWTTV3o/cTRziN+Ac1sYNzw1sEddiBS2TfCdjRlY2qMmgyAMARQhYEbcqbzGz8jcDNOsX/gS/knjAZ9UYPZl7mYFyq3Acg3089CTN+EXkFEMJysFU0XQW9P2YzICsAivi5";
-
-        // Use the front camera, depends on robot phone mount location.
-        parametersV.cameraDirection = VuforiaLocalizer.CameraDirection.FRONT;
-
-        // Start the Vuforia application with defined parameters.
-        this.RobotVision = ClassFactory.createVuforiaLocalizer(parametersV);
-
-        // Load the Relic images from the resource file.
-        relicTrackables = this.RobotVision.loadTrackablesFromAsset("RelicVuMark");
-
-        // Select the first image in the resource.
-        relicTemplate = relicTrackables.get(0);
-
-        // Start looking for image.
-        relicTrackables.activate();
-        idle(); // let other classes (threads) utilize the phone CPU resources.
-
+        // Initialize the variables needed to store are JSON auton parameters
         int ArraySize = 50;
         double[] leftArray;
         leftArray = new double[ArraySize];
@@ -73,6 +47,8 @@ public class SalineLinearOpmode extends LinearOpMode {
         int[] v_state;
         v_state = new int[ArraySize];
         int v_state_current = 0;
+        /*
+
         double r = 0;
         double b = 0;
         double n = 0;
@@ -107,17 +83,17 @@ public class SalineLinearOpmode extends LinearOpMode {
         OpModeManagerImpl opModeManager = (OpModeManagerImpl) this.internalOpModeServices; //Store OpModeManagerImpl
 
         String OpModeName = opModeManager.getActiveOpModeName() + ".json";
-        testset.ReadSettings(OpModeName);
+        settings.ReadSettings(OpModeName);
         v_state_current = 0;
         // Read the first step of the state machine
-        v_state[v_state_current] = testset.GetIntSetting(String.format("v_state%02d", v_state_current));
+        v_state[v_state_current] = settings.GetIntSetting(String.format("v_state%02d", v_state_current));
         // Keep Reading until all steps are read, don't read anything we don't actually need
         while (v_state[v_state_current] > 0) {
-            timeArray[v_state_current] = testset.GetSetting(String.format("timeArray%02d", v_state_current));
-            rightArray[v_state_current] = testset.GetSetting(String.format("rightArray%02d", v_state_current));
-            leftArray[v_state_current] = testset.GetSetting(String.format("leftArray%02d", v_state_current));
+            timeArray[v_state_current] = settings.GetSetting(String.format("timeArray%02d", v_state_current));
+            rightArray[v_state_current] = settings.GetSetting(String.format("rightArray%02d", v_state_current));
+            leftArray[v_state_current] = settings.GetSetting(String.format("leftArray%02d", v_state_current));
             v_state_current++;
-            v_state[v_state_current] = testset.GetIntSetting(String.format("v_state%02d", v_state_current));
+            v_state[v_state_current] = settings.GetIntSetting(String.format("v_state%02d", v_state_current));
         }
         v_state_current = 0;
 
@@ -153,7 +129,7 @@ public class SalineLinearOpmode extends LinearOpMode {
         double jewelPositionDn = 0.36;
         double intRunTime = 0;
 
-        ElapsedTime runtime = new ElapsedTime();
+
 
         int tri_state;
 
@@ -202,118 +178,13 @@ public class SalineLinearOpmode extends LinearOpMode {
         double max = 0.0;
         Servo dummy = null;
 
-        /* Initialize the hardware variables. */
-        try {
-            dummy = hardwareMap.servo.get("dummy");
-            max = -1.0;
-        } catch (Exception p_exception) {
-            max = 1.0;
-        }
-        ;
-
-        try {
-            leftMotor = hardwareMap.dcMotor.get("left");
-            if (max == 1.0) {
-                leftMotor.setDirection(DcMotor.Direction.FORWARD);
-            } else {
-                leftMotor.setDirection(DcMotor.Direction.REVERSE);
-            }
-            leftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        } catch (Exception p_exception) {
-        }
-        ;
-
-        try {
-            rightMotor = hardwareMap.dcMotor.get("right");
-            if (max == 1.0) {
-                rightMotor.setDirection(DcMotor.Direction.REVERSE);
-            } else {
-                rightMotor.setDirection(DcMotor.Direction.FORWARD);
-            }
-            rightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        } catch (Exception p_exception) {
-        }
-        ;
-
-        dummy = null;
-
-        try {
-            dumpMotor = hardwareMap.dcMotor.get("dump");
-            dumpMotor.setDirection(DcMotor.Direction.REVERSE);
-            dumpMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            dumpMotor.setZeroPowerBehavior(BRAKE);
-            jewelPositionUp = 0.2;
-            jewelPositionDn = 0.95;
-        } catch (Exception p_exception) {
-        }
-        ;
-        try {
-            liftMotor = hardwareMap.dcMotor.get("lift");
-            liftMotor.setDirection(DcMotor.Direction.REVERSE);
-            liftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            liftMotor.setZeroPowerBehavior(BRAKE);
-        } catch (Exception p_exception) {
-        }
-
-        try {
-            armMotor = hardwareMap.dcMotor.get("arm");
-            armMotor.setDirection(DcMotor.Direction.REVERSE);
-            armMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            armMotor.setZeroPowerBehavior(BRAKE);
-        } catch (Exception p_exception) {
-        }
-        ;
-
-        try {
-            slideMotor = hardwareMap.dcMotor.get("slide");
-            slideMotor.setDirection(DcMotor.Direction.FORWARD);
-            slideMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            slideMotor.setZeroPowerBehavior(BRAKE);
-        } catch (Exception p_exception) {
-        }
-        ;
-
-        try {
-            rightServo = hardwareMap.servo.get("righthand");
-        } catch (Exception p_exception) {
-        }
-        ;
-
-        try {
-            leftServo = hardwareMap.servo.get("lefthand");
-        } catch (Exception p_exception) {
-        }
-        ;
-
-        try {
-            clawServo = hardwareMap.servo.get("claw");
-        } catch (Exception p_exception) {
-        }
-        ;
-
-        try {
-            jewelServo = hardwareMap.servo.get("jewel");
-        } catch (Exception p_exception) {
-        }
-        ;
-
-        try {
-            sensorRGB = hardwareMap.colorSensor.get("color");
-        } catch (Exception p_exception) {
-        }
-        ;
-
-        // initialize bot with starting power / servo positions
-        if (rightMotor != null) rightMotor.setPower(right);
-        if (leftMotor != null) leftMotor.setPower(left);
-        if (slideMotor != null) slideMotor.setPower(collect);
-        if (armMotor != null) armMotor.setPower(shoot);
 
         //if (clawServo != null) clawServo.setPosition(clawPosition);
         //if (rightServo != null) rightServo.setPosition(handPosition-handOffset);
         //if (leftServo != null) leftServo.setPosition(handPosition+handOffset);
         //if (jewelServo != null) jewelServo.setPosition(jewelPositionUp);
 
+        */
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
@@ -322,6 +193,8 @@ public class SalineLinearOpmode extends LinearOpMode {
 
         while (opModeIsActive()) {
 
+
+            /*
             tri_state = tri_state_default;
 
             bCurrStateX = gamepad1.x;
@@ -424,6 +297,7 @@ public class SalineLinearOpmode extends LinearOpMode {
                         break;
 
                     case 4:
+
                         handOffset = 0.3;
                         if (rightServo != null) rightServo.setPosition(handPosition - handOffset);
                         if (leftServo != null) leftServo.setPosition(handPosition + handOffset);
@@ -594,14 +468,7 @@ public class SalineLinearOpmode extends LinearOpMode {
 
                         v_state_current++;
                         break;
-/*
-case 99:
-if (OpModeName.toLowerCase().contains("blue")) {
-REDalliance = -REDalliance;
-}
-break;
-*/
-
+/
                     case 11:
                         int newDumpTarget = dumpMotor.getCurrentPosition() + (int) timeArray[v_state_current];
                         dumpMotor.setTargetPosition(newDumpTarget);
@@ -644,18 +511,18 @@ break;
             }
 
             if (tri_state == 2) {
-                testset.newSettings();
+                settings.newSettings();
                 v_state_current = 0;
 
                 while (v_state[v_state_current] > 0) {
-                    testset.SetIntSetting(String.format("v_state%02d", v_state_current), v_state[v_state_current]);
-                    testset.SetSetting(String.format("timeArray%02d", v_state_current), timeArray[v_state_current]);
-                    testset.SetSetting(String.format("rightArray%02d", v_state_current), rightArray[v_state_current]);
-                    testset.SetSetting(String.format("leftArray%02d", v_state_current), leftArray[v_state_current]);
+                    settings.SetIntSetting(String.format("v_state%02d", v_state_current), v_state[v_state_current]);
+                    settings.SetSetting(String.format("timeArray%02d", v_state_current), timeArray[v_state_current]);
+                    settings.SetSetting(String.format("rightArray%02d", v_state_current), rightArray[v_state_current]);
+                    settings.SetSetting(String.format("leftArray%02d", v_state_current), leftArray[v_state_current]);
                     v_state_current++;
                 }
-                testset.SetIntSetting("v_state_count", v_state_current);
-                testset.SaveSetting(OpModeName);
+                settings.SetIntSetting("v_state_count", v_state_current);
+                settings.SaveSetting(OpModeName);
 
             }
 
@@ -793,11 +660,11 @@ break;
             idle();
 
         }
+*/
+            idle();
+        }
 
-        idle();
-    }
-
-
+/*
     public void gyroTurn(double leftspeed, double rightspeed, double angle) {
 
         // keep looping while we are still active, and not on heading.
@@ -847,7 +714,8 @@ break;
      * @return error angle: Degrees in the range +/- 180. Centered on the robot's frame of reference
      * +ve error means the robot should turn LEFT (CCW) to reduce error.
      */
-    public double getError(double targetAngle) {
+
+/*    public double getError(double targetAngle) {
 
         double robotError;
 
@@ -865,11 +733,13 @@ break;
      * @param PCoeff Proportional Gain Coefficient
      * @return
      */
+
+/*
     public double getSteer(double error, double PCoeff) {
         return Range.clip(error * PCoeff, -1, 1);
     }
+*/
 
+    }
 
 }
-
-

@@ -43,6 +43,9 @@ public class smsHolonomic15555 extends LinearOpMode {
     int amPos;
     int aePos;
     int aeOffset;
+    float armNominalPower = 0.3f;
+    float driveNominalPower = 0.3f;
+
     boolean previousDPD = false;
     boolean previousDPU = false;
     boolean previousDPL = false;
@@ -54,10 +57,11 @@ public class smsHolonomic15555 extends LinearOpMode {
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
          */
-        robot.init(hardwareMap);
+        robot.init(hardwareMap, false);
+        if (robot.armMove != null) {robot.armMove.setDirection(DcMotor.Direction.REVERSE);}
 
         // Send telemetry message to signify robot waiting;
-        telemetry.addData("Say", "Hello Driver");    //
+        telemetry.addData("Say", "Hello Saline FTC Robotics");    //
         telemetry.update();
         float powerReducer = 0.5f;
         // Wait for the game to start (driver presses PLAY)
@@ -78,7 +82,7 @@ public class smsHolonomic15555 extends LinearOpMode {
             float BackRight = gamepad1LeftY - gamepad1LeftX - gamepad1RightX;
             float BackLeft = gamepad1LeftY + gamepad1LeftX + gamepad1RightX;
 
-            float gamepad2LeftY = -gamepad2.left_stick_y;
+            float gamepad2LeftY = gamepad2.left_stick_y;
             float gamepad2RightY = -gamepad2.right_stick_y;
             float gamepad2RightTrigger = gamepad2.right_trigger;
             float gamepad2LeftTrigger = gamepad2.left_trigger;
@@ -96,13 +100,15 @@ public class smsHolonomic15555 extends LinearOpMode {
             }
             previousDPD = dpad_check;
 
-            float armMove = Range.clip(gamepad2LeftY,-1,1)*0.5f;  // cap the arm-move to 50% but without clipping
-            float armEx = Range.clip(gamepad2RightY,-1,1)*0.2f;   // cap the arm-extend to 20% but without clipping
+            float armMove = Range.clip(gamepad2LeftY,-1,1)*armNominalPower;  // cap the arm-move to 50% but without clipping
+            float armEx = Range.clip(gamepad2RightY,-1,1)*0.4f;   // cap the arm-extend to 20% but without clipping
 
+            powerReducer = driveNominalPower;
             if ( gamepad1.right_trigger > 0) {
                 powerReducer = 1.0f;
-            } else {
-                powerReducer = 0.5f;
+            }
+            if ( gamepad1.left_trigger > 0) {
+                powerReducer = 0.1f;
             }
 
             // clip the right/left values so that the values never exceed +/- 1
@@ -130,18 +136,17 @@ public class smsHolonomic15555 extends LinearOpMode {
             }
 
             if (robot.armMove != null) {
+                robot.armMove.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 if (gamepad2.y) {
-                    robot.armMove.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    robot.armMove.setTargetPosition(2500);
-                    robot.armMove.setPower(0.5f);
+                    amPos = 2000;
+                    armMove = armNominalPower;
                 } else {
-                    if (robot.armMove.isBusy()) {
-
-                    } else {
-                        robot.armMove.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                        robot.armMove.setPower(armMove);
-                    }
+                    amPos = (int) (robot.armMove.getCurrentPosition() + armMove / Math.abs(armMove) * 100);
+                    amPos = Range.clip(amPos,0,4250);
                 }
+                robot.armMove.setTargetPosition(amPos);
+                robot.armMove.setPower(Math.abs(armMove));
+
                 amPos = robot.armMove.getCurrentPosition();
             }
 

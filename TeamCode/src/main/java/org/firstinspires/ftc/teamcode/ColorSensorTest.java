@@ -39,6 +39,7 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.smsHardware;
 
+@Disabled
 @TeleOp(name="Pushbot: Color Sensor", group="Pushbot")
 public class ColorSensorTest extends LinearOpMode {
 

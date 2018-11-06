@@ -30,7 +30,8 @@ package org.firstinspires.ftc.teamcode;/* Copyright (c) 2017 FIRST. All rights r
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
-
+import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 
 /**
  * This is NOT an opmode.
@@ -55,19 +56,58 @@ public class smsHardware
     public DcMotor collector = null;
 
     /* local OpMode members. */
-    HardwareMap hwMap           =  null;
+    //HardwareMap hwMap           =  null;
     //private ElapsedTime period  = new ElapsedTime();
+    public NormalizedColorSensor colorSensor = null;
+    public int teamID = 0;
 
+    public BNO055IMU imu = null;
 
     /* Initialize standard Hardware interfaces */
-    public void init(HardwareMap ahwMap) {
+    public void init(HardwareMap ahwMap, boolean Auton) {
         // Save reference to Hardware map
-        hwMap = ahwMap;
+        //hwMap = ahwMap;
+
+        if (Auton = true) {
+            // Initialize the bot-specific color sensor
+            try
+            {
+                colorSensor = ahwMap.get(NormalizedColorSensor.class, "cs10644");
+                teamID = 10644;
+            }
+            catch (Exception p_exception) { };
+
+            try
+            {
+                colorSensor = ahwMap.get(NormalizedColorSensor.class, "cs10645");
+                teamID = 10645;
+            }
+            catch (Exception p_exception) { };
+
+            try
+            {
+                colorSensor = ahwMap.get(NormalizedColorSensor.class, "cs15555");
+                teamID = 15555;
+            }
+            catch (Exception p_exception) { };
+
+            // Embedded IMU
+            BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+            parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
+            parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+            parameters.loggingEnabled = true;
+            parameters.loggingTag = "IMU";
+            try {
+                imu = ahwMap.get(BNO055IMU.class, "imu");
+                imu.initialize(parameters);
+            } catch (Exception p_exception) { };
+
+        }
 
         // Define and Initialize Motors
         try
         {
-            frontRightDrive = hwMap.get(DcMotor.class, "fr");
+            frontRightDrive = ahwMap.get(DcMotor.class, "fr");
             frontRightDrive.setDirection(DcMotor.Direction.FORWARD) ;
             frontRightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
@@ -75,7 +115,7 @@ public class smsHardware
 
         try
         {
-            rearRightDrive = hwMap.get(DcMotor.class, "rr");
+            rearRightDrive = ahwMap.get(DcMotor.class, "rr");
             rearRightDrive.setDirection(DcMotor.Direction.FORWARD) ;
             rearRightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
@@ -83,7 +123,7 @@ public class smsHardware
 
         try
         {
-            frontLeftDrive = hwMap.get(DcMotor.class, "fl");
+            frontLeftDrive = ahwMap.get(DcMotor.class, "fl");
             frontLeftDrive.setDirection(DcMotor.Direction.REVERSE) ;
             frontLeftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
@@ -91,7 +131,7 @@ public class smsHardware
 
         try
         {
-            rearLeftDrive = hwMap.get(DcMotor.class, "rl");
+            rearLeftDrive = ahwMap.get(DcMotor.class, "rl");
             rearLeftDrive.setDirection(DcMotor.Direction.REVERSE) ;
             rearLeftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
@@ -99,7 +139,7 @@ public class smsHardware
 
         try
         {
-            armMove = hwMap.get(DcMotor.class, "am");
+            armMove = ahwMap.get(DcMotor.class, "am");
             armMove.setDirection(DcMotor.Direction.FORWARD);
             armMove.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             armMove.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -109,7 +149,7 @@ public class smsHardware
 
         try
         {
-            armExtend = hwMap.get(DcMotor.class, "ae");
+            armExtend = ahwMap.get(DcMotor.class, "ae");
             armExtend.setDirection(DcMotor.Direction.FORWARD);
             armExtend.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             armExtend.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -119,7 +159,7 @@ public class smsHardware
 
         try
         {
-            collector = hwMap.get(DcMotor.class, "c");
+            collector = ahwMap.get(DcMotor.class, "c");
             collector.setDirection(DcMotor.Direction.FORWARD) ;
             collector.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }

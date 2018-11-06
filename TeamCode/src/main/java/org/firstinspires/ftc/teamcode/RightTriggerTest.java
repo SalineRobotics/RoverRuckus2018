@@ -38,7 +38,7 @@ import com.qualcomm.robotcore.hardware.SwitchableLight;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.smsHardware;
-
+@Disabled
 @TeleOp(name="Right Trigger Test", group="Pushbot")
 public class RightTriggerTest extends LinearOpMode {
 
