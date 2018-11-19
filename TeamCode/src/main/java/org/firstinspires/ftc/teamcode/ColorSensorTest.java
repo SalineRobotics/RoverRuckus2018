@@ -29,33 +29,50 @@ package org.firstinspires.ftc.teamcode;/* Copyright (c) 2017 FIRST. All rights r
 
 import android.graphics.Color;
 
+import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.SwitchableLight;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.smsHardware;
 
-@Disabled
+import java.util.Locale;
+
+
 @TeleOp(name="Pushbot: Color Sensor", group="Pushbot")
 public class ColorSensorTest extends LinearOpMode {
 
     /* Declare OpMode members. */
     NormalizedColorSensor colorSensor;
+    DistanceSensor sensorRange;
+    DistanceSensor sensorDistance;
+    Servo sensorAxis;
     float[] hsvValues = new float[3];
     final float values[] = hsvValues;
+boolean previousDPU;
+boolean previousDPD;
 
     @Override
     public void runOpMode() {
         boolean bPrevState = false;
         boolean bCurrState = false;
-        colorSensor = hardwareMap.get(NormalizedColorSensor.class, "cs");
+        double S = 0.0;
+        // you can use this as a regular DistanceSensor.
+        sensorRange = hardwareMap.get(DistanceSensor.class, "2m");
+        colorSensor = hardwareMap.get(NormalizedColorSensor.class, "cs15555");
+        sensorDistance = hardwareMap.get(DistanceSensor.class, "cs15555");
+        sensorAxis = hardwareMap.get(Servo.class,"2maxis");
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
          */
+
 
 
 
@@ -76,6 +93,26 @@ public class ColorSensorTest extends LinearOpMode {
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
+
+            if (gamepad2.y) { S = 1.0; }
+            if (gamepad2.x) { S = 0.25; }
+            if (gamepad2.b) { S = 0.75; }
+            if (gamepad2.a) { S= 1.0; }
+            boolean dpad_check = gamepad2.dpad_up;
+            if(dpad_check && (dpad_check != previousDPU)) {
+                S += 0.1;
+            }
+            previousDPU = dpad_check;
+
+            dpad_check = gamepad2.dpad_down;
+            if(dpad_check && (dpad_check != previousDPD)) {
+                S -= 0.1;
+            }
+            previousDPD = dpad_check;
+
+            S = Range.clip(S,0.0,1.0);
+            sensorAxis.setPosition(S);
+
             //COLOR SENSOR
             NormalizedRGBA colors = colorSensor.getNormalizedColors();
             Color.colorToHSV(colors.toColor(), hsvValues);
@@ -90,12 +127,18 @@ public class ColorSensorTest extends LinearOpMode {
             colors.green /= max;
             colors.blue  /= max;
             color = colors.toColor();
+            telemetry.addData("Distance (cm)",
+                    String.format(Locale.US, "%.02f", sensorDistance.getDistance(DistanceUnit.CM)));
+            telemetry.addData("Distance (cm)",
+                    sensorDistance.getDistance(DistanceUnit.CM));
+
             telemetry.addLine("normalized color:  ")
                     .addData("a", "%02x", Color.alpha(color))
                     .addData("r", "%02x", Color.red(color))
                     .addData("g", "%02x", Color.green(color))
-                    .addData("b", "%02x", Color.blue(color));
-
+                    .addData("b", "%02x", Color.blue(color))
+                    .addData("r1",  (float)(Color.red(color)*100/Color.blue(color)*100))
+                    .addData("r2",  (float)(Color.red(color)*100/Color.blue(color)));
             if (hsvValues[1] < .5){
                 telemetry.addLine()
                         .addData("Color", "White");
@@ -104,6 +147,19 @@ public class ColorSensorTest extends LinearOpMode {
                 telemetry.addLine()
                         .addData("Color", "Yellow");
             }
+
+
+
+                    // generic DistanceSensor methods.
+                    telemetry.addData("deviceName",sensorRange.getDeviceName() );
+                    telemetry.addData("range", String.format("%.01f mm", sensorRange.getDistance(DistanceUnit.MM)));
+                    telemetry.addData("range", String.format("%.01f cm", sensorRange.getDistance(DistanceUnit.CM)));
+                    telemetry.addData("range", String.format("%.01f m", sensorRange.getDistance(DistanceUnit.METER)));
+                    telemetry.addData("range", String.format("%.01f in", sensorRange.getDistance(DistanceUnit.INCH)));
+
+                    // Rev2mDistanceSensor specific methods.
+                    //telemetry.addData("ID", String.format("%x", sensorTimeOfFlight.getModelID()));
+                    //telemetry.addData("did time out", Boolean.toString(sensorTimeOfFlight.didTimeoutOccur()));
 
             telemetry.update();
             /*

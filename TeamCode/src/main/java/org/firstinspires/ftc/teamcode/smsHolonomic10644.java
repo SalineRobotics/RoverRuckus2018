@@ -41,7 +41,7 @@ import org.firstinspires.ftc.teamcode.smsHardware;
 public class smsHolonomic10644 extends LinearOpMode {
 
     /* Declare OpMode members. */
-   smsHardware robot = new smsHardware();   // Use a Pushbot's hardware
+    smsHardware robot = new smsHardware();   // Use a Pushbot's hardware
     float[] hsvValues = new float[3];
     final float values[] = hsvValues;
     float armNominalPower = 0.3f;
@@ -97,13 +97,13 @@ public class smsHolonomic10644 extends LinearOpMode {
 
             // Allow driver to select Tank vs POV by pressing START
             boolean dpad_check = gamepad2.dpad_up;
-            if(dpad_check && (dpad_check != previousDPU)) {
+            if (dpad_check && (dpad_check != previousDPU)) {
                 aeOffset += 25;
             }
             previousDPU = dpad_check;
 
             dpad_check = gamepad2.dpad_down;
-            if(dpad_check && (dpad_check != previousDPD)) {
+            if (dpad_check && (dpad_check != previousDPD)) {
                 aeOffset -= 25;
             }
             previousDPD = dpad_check;
@@ -120,8 +120,8 @@ public class smsHolonomic10644 extends LinearOpMode {
             }
             previousDPR = dpad_check;
 
-            float armMove = Range.clip(gamepad2LeftY,-1,1) * armNominalPower;  // cap the arm-move to 50% but without clipping
-            float armEx = Range.clip(gamepad2RightY,-1,1) * 0.2f;   // cap the arm-extend to 20% but without clipping
+            float armMove = Range.clip(gamepad2LeftY, -1, 1) * armNominalPower;  // cap the arm-move to 50% but without clipping
+            float armEx = Range.clip(gamepad2RightY, -1, 1) * 0.2f;   // cap the arm-extend to 20% but without clipping
 
             // clip the right/left values so that the values never exceed +/- 1
             FrontRight = Range.clip(FrontRight, -1, 1);
@@ -130,19 +130,27 @@ public class smsHolonomic10644 extends LinearOpMode {
             BackRight = Range.clip(BackRight, -1, 1);
 
             powerReducer = driveNominalPower;
-            if ( gamepad1.right_trigger > 0) {
+            if (gamepad1.right_trigger > 0) {
                 powerReducer = 1.0f;
             }
-            if ( gamepad1.left_trigger > 0) {
+            if (gamepad1.left_trigger > 0) {
                 powerReducer = 0.1f;
             }
 
             // write the values to the motors
 
-            if (robot.frontRightDrive != null) {robot.frontRightDrive.setPower(FrontRight * powerReducer);}
-            if (robot.frontLeftDrive != null) {robot.frontLeftDrive.setPower(FrontLeft * powerReducer);}
-            if (robot.rearLeftDrive != null) {robot.rearLeftDrive.setPower(BackLeft * powerReducer);}
-            if (robot.rearRightDrive != null) {robot.rearRightDrive.setPower(BackRight * powerReducer);}
+            if (robot.frontRightDrive != null) {
+                robot.frontRightDrive.setPower(FrontRight * powerReducer);
+            }
+            if (robot.frontLeftDrive != null) {
+                robot.frontLeftDrive.setPower(FrontLeft * powerReducer);
+            }
+            if (robot.rearLeftDrive != null) {
+                robot.rearLeftDrive.setPower(BackLeft * powerReducer);
+            }
+            if (robot.rearRightDrive != null) {
+                robot.rearRightDrive.setPower(BackRight * powerReducer);
+            }
 
             if (robot.collector != null) {
                 if (gamepad2LeftTrigger > 0f) {
@@ -159,9 +167,12 @@ public class smsHolonomic10644 extends LinearOpMode {
                 if (gamepad2.y) {
                     amPos = 2500;
                     armMove = armNominalPower;
+                } else if (gamepad2.a) {
+                    amPos = 0;
+                    armMove = 1.0f;
                 } else {
                     amPos = (int) (robot.armMove.getCurrentPosition() + armMove / Math.abs(armMove) * 100);
-                    amPos = Range.clip(amPos,0,5750);
+                    amPos = Range.clip(amPos, 0, 6000);
                 }
                 robot.armMove.setTargetPosition(amPos);
                 robot.armMove.setPower(Math.abs(armMove));
@@ -170,10 +181,10 @@ public class smsHolonomic10644 extends LinearOpMode {
             }
 
             if (robot.armExtend != null) {
-                    //this code is for the motorized collector
-                    robot.armExtend.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    robot.armExtend.setTargetPosition((int)(aeOffset + amPos / 7.11)); // based on a double 15:40 tooth reduction setup
-                    robot.armExtend.setPower(0.2f);
+                //this code is for the motorized collector
+                robot.armExtend.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                robot.armExtend.setTargetPosition((int) (aeOffset + amPos / 7.11)); // based on a double 15:40 tooth reduction setup
+                robot.armExtend.setPower(0.2f);
 
                 // this code is for the 4-link / passive collector
                 //robot.armExtend.setPower(armEx);
@@ -187,9 +198,9 @@ public class smsHolonomic10644 extends LinearOpMode {
                     .addData("back left", BackLeft)
                     .addData("back right", BackRight)
                     .addData("armExtend ", aePos)
-                    .addData("armExtendPower",armEx)
+                    .addData("armExtendPower", armEx)
                     .addData("armMove ", amPos)
-                    .addData("armMovePower",armMove);
+                    .addData("armMovePower", armMove);
 
             telemetry.update();
         }

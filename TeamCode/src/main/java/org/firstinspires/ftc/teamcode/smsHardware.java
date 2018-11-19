@@ -28,6 +28,7 @@ package org.firstinspires.ftc.teamcode;/* Copyright (c) 2017 FIRST. All rights r
  */
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.hardware.bosch.BNO055IMU;
@@ -55,10 +56,15 @@ public class smsHardware
     public DcMotor armExtend = null;
     public DcMotor collector = null;
 
+    public Servo sensorAxis = null;
+    public Servo servoMarker = null;
+
     /* local OpMode members. */
     //HardwareMap hwMap           =  null;
     //private ElapsedTime period  = new ElapsedTime();
     public NormalizedColorSensor colorSensor = null;
+    public DistanceSensor sensorRange; // used for 2m
+    public DistanceSensor colorRange; // used for REV Distance+Color sensor
     public int teamID = 0;
 
     public BNO055IMU imu = null;
@@ -68,7 +74,7 @@ public class smsHardware
         // Save reference to Hardware map
         //hwMap = ahwMap;
 
-        if (Auton = true) {
+        if (Auton == true) {
             // Initialize the bot-specific color sensor
             try
             {
@@ -87,6 +93,8 @@ public class smsHardware
             try
             {
                 colorSensor = ahwMap.get(NormalizedColorSensor.class, "cs15555");
+                colorRange = ahwMap.get(DistanceSensor.class, "cs15555");
+
                 teamID = 15555;
             }
             catch (Exception p_exception) { };
@@ -102,7 +110,23 @@ public class smsHardware
                 imu.initialize(parameters);
             } catch (Exception p_exception) { };
 
-        }
+            try
+            {
+                sensorRange = ahwMap.get(DistanceSensor.class, "2m");
+            }
+            catch (Exception p_exception) { };
+
+            try
+            {
+                sensorAxis = ahwMap.get(Servo.class, "2maxis");
+            }
+            catch (Exception p_exception) { };
+
+            try
+            {
+                servoMarker = ahwMap.get(Servo.class, "marker");
+            }
+            catch (Exception p_exception) { };        }
 
         // Define and Initialize Motors
         try
@@ -141,7 +165,7 @@ public class smsHardware
         {
             armMove = ahwMap.get(DcMotor.class, "am");
             armMove.setDirection(DcMotor.Direction.FORWARD);
-            armMove.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            if (Auton == true) { armMove.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); }
             armMove.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             armMove.setZeroPowerBehavior(com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.BRAKE);
         }
@@ -151,7 +175,7 @@ public class smsHardware
         {
             armExtend = ahwMap.get(DcMotor.class, "ae");
             armExtend.setDirection(DcMotor.Direction.FORWARD);
-            armExtend.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            if (Auton == true) { armExtend.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);}
             armExtend.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             armExtend.setZeroPowerBehavior(com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.BRAKE);
         }
@@ -161,7 +185,9 @@ public class smsHardware
         {
             collector = ahwMap.get(DcMotor.class, "c");
             collector.setDirection(DcMotor.Direction.FORWARD) ;
+            collector.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             collector.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            collector.setZeroPowerBehavior(com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.BRAKE);
         }
         catch (Exception p_exception) { };
     }

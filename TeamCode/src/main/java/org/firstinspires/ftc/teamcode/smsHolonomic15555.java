@@ -42,6 +42,7 @@ public class smsHolonomic15555 extends LinearOpMode {
 
     int amPos;
     int aePos;
+    int colPos;
     int aeOffset;
     float armNominalPower = 0.3f;
     float driveNominalPower = 0.3f;
@@ -59,6 +60,7 @@ public class smsHolonomic15555 extends LinearOpMode {
          */
         robot.init(hardwareMap, false);
         if (robot.armMove != null) {robot.armMove.setDirection(DcMotor.Direction.REVERSE);}
+        if (robot.armExtend != null) {robot.armExtend.setDirection(DcMotor.Direction.REVERSE);}
 
         // Send telemetry message to signify robot waiting;
         telemetry.addData("Say", "Hello Saline FTC Robotics");    //
@@ -101,7 +103,10 @@ public class smsHolonomic15555 extends LinearOpMode {
             previousDPD = dpad_check;
 
             float armMove = Range.clip(gamepad2LeftY,-1,1)*armNominalPower;  // cap the arm-move to 50% but without clipping
-            float armEx = Range.clip(gamepad2RightY,-1,1)*0.4f;   // cap the arm-extend to 20% but without clipping
+            float armEx = Range.clip(gamepad2RightY,-1f,1f);   // cap the arm-extend to 20% but without clipping
+            if (gamepad2.right_trigger == 0) {
+                 armEx *= armNominalPower;   // cap the arm-extend to 20% but without clipping
+            }
 
             powerReducer = driveNominalPower;
             if ( gamepad1.right_trigger > 0) {
@@ -126,13 +131,23 @@ public class smsHolonomic15555 extends LinearOpMode {
             robot.rearRightDrive.setPower(BackRight);
 
             if (robot.collector != null) {
+                robot.collector.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 if (gamepad2LeftTrigger > 0f) {
-                    robot.collector.setPower(1);
+                    colPos = 3450;
                 } else if (gamepad2RightTrigger > 0f) {
-                    robot.collector.setPower(-1);
+                    colPos = 0;
                 } else {
-                    robot.collector.setPower(0);
+                    colPos = -1;
                 }
+
+                if (colPos >= 0) {
+                    robot.collector.setTargetPosition(colPos);
+                    robot.collector.setPower(1.0f);
+                } else {
+                    robot.collector.setPower(0.0f);
+                }
+
+                colPos = robot.collector.getCurrentPosition();
             }
 
             if (robot.armMove != null) {
@@ -151,13 +166,26 @@ public class smsHolonomic15555 extends LinearOpMode {
             }
 
             if (robot.armExtend != null) {
-            //    this code is for the motorized collector
-            //    robot.armExtend.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            //    robot.armExtend.setTargetPosition((int)(aeOffset + amPos / 7.11)); // based on a double 15:40 tooth reduction setup
-            //    robot.armExtend.setPower(0.2f);
+                //robot.armExtend.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//    this code is for the motorized collector
+//    robot.armExtend.setTargetPosition((int)(aeOffset + amPos / 7.11)); // based on a double 15:40 tooth reduction setup
+//    robot.armExtend.setPower(0.2f);
 
                 // this code is for the 4-link / passive collector
+
+                robot.armExtend.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                //armEx = Range.clip(armEx,-0.5f,0.5f);
                 robot.armExtend.setPower(armEx);
+                /*
+                aePos = (int) (robot.armExtend.getCurrentPosition());
+                if (armEx != 0) {
+                    aePos += (armEx*25 / Math.abs(armEx));
+                    aePos = Range.clip(aePos,0,120);
+                    robot.armExtend.setTargetPosition(aePos); // based on a double 15:40 tooth reduction setu
+                    robot.armExtend.setPower(1.0f);
+                } else {
+                    robot.armExtend.setPower(0.0f);
+                }*/
                 aePos = robot.armExtend.getCurrentPosition();
             }
 
@@ -170,7 +198,8 @@ public class smsHolonomic15555 extends LinearOpMode {
                     .addData("armExtend ", aePos)
                     .addData("armExtendPower",armEx)
                     .addData("armMove ", amPos)
-                    .addData("armMovePower",armMove);
+                    .addData("armMovePower",armMove)
+                    .addData("HangMotorPosition",colPos);
 
             telemetry.update();
         }
