@@ -172,7 +172,7 @@ public class smsHolonomic10644 extends LinearOpMode {
                     armMove = 1.0f;
                 } else {
                     amPos = (int) (robot.armMove.getCurrentPosition() + armMove / Math.abs(armMove) * 100);
-                    amPos = Range.clip(amPos, 0, 6000);
+                    amPos = Range.clip(amPos, 0, 8100);
                 }
                 robot.armMove.setTargetPosition(amPos);
                 robot.armMove.setPower(Math.abs(armMove));

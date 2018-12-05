@@ -16,12 +16,26 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.internal.opmode.OpModeManagerImpl;
 
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
+
+import java.util.List;
 import java.util.Locale;
 
 import static com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.BRAKE;
 
 
 public class smsAuton extends LinearOpMode {
+
+    private static final String TFOD_MODEL_ASSET = "RoverRuckus.tflite";
+    private static final String LABEL_GOLD_MINERAL = "Gold Mineral";
+    private static final String LABEL_SILVER_MINERAL = "Silver Mineral";
+    private static final String VUFORIA_KEY = "AXKT92L/////AAAAGS+ZuWWofUShhb1MB4+Zbic/fnrONEJsEKNCY4RE1F7X8GaFg4EQYqHF4GMlj35ZJdzZ/LQlnXVV2WlhqhHR5IDlScqWtishwl2yPBRzCXAWYP5MCphLOigzPcshkggMYEKQWxwlhvoc2lsN+54KexfxlI0ss9cMq+unSD8ZZ5Of5OuY0lX7DWAEEPh1KsdeEU7EkCGP96f5TQI518LsriyHeg73KgDLCcGd0yBUSuGWTTV3o/cTRziN+Ac1sYNzw1sEddiBS2TfCdjRlY2qMmgyAMARQhYEbcqbzGz8jcDNOsX/gS/knjAZ9UYPZl7mYFyq3Acg3089CTN+EXkFEMJysFU0XQW9P2YzICsAivi5";
+    private VuforiaLocalizer vuforia;
+    private TFObjectDetector tfod;
+
 
     smsHardware robot = new smsHardware();   // Use a Pushbot's hardware
     smsJSON settings = new smsJSON();
@@ -41,6 +55,13 @@ public class smsAuton extends LinearOpMode {
     public void runOpMode() {
 
         robot.init(hardwareMap, true);
+        initVuforia();
+
+        if (ClassFactory.getInstance().canCreateTFObjectDetector()) {
+            initTfod();
+        } else {
+            telemetry.addData("Sorry!", "This device is not compatible with TFOD");
+        }
 
 // Initialize the variables needed to store are JSON auton parameters
         int ArraySize = 50;
@@ -90,7 +111,7 @@ if (gamepad1.left_trigger > 0.1 || gamepad1.right_trigger > 0.1) { tri_state_def
 */
 // Shared Code Below
         OpModeManagerImpl opModeManager = (OpModeManagerImpl) this.internalOpModeServices; //Store OpModeManagerImpl
-        String OpModeName = opModeManager.getActiveOpModeName() + ".json";
+        String OpModeName = robot.teamID + opModeManager.getActiveOpModeName() + ".json";
         if (robot.sensorAxis != null) robot.sensorAxis.setPosition(servoPOS);
         if (robot.servoMarker != null) robot.servoMarker.setPosition(1.0);
         settings.ReadSettings(OpModeName);
@@ -254,8 +275,8 @@ if (tri_state == 1) {
                     robot.rearLeftDrive.setPower(leftArray[v_state_current] + rightArray[v_state_current]);
                     intRunTime = runtime.milliseconds() + timeArray[v_state_current];
                     while (runtime.milliseconds() < intRunTime) {
-                        telemetry.addData("drive-l",leftArray[v_state_current]);
-                        telemetry.addData("drive-r",rightArray[v_state_current]);
+                        telemetry.addData("drive-l", leftArray[v_state_current]);
+                        telemetry.addData("drive-r", rightArray[v_state_current]);
                         telemetry.update();
                         idle();
                     }
@@ -269,7 +290,7 @@ if (tri_state == 1) {
 
                 case 2: // Drive straight (in any of 4 directions) for a given distance (encoder count)
 
-                    encoderDrive(leftArray[v_state_current], rightArray[v_state_current],timeArray[v_state_current]);
+                    encoderDrive(leftArray[v_state_current], rightArray[v_state_current], timeArray[v_state_current]);
                     v_state_current++;
                     break;
 
@@ -293,13 +314,13 @@ if (tri_state == 1) {
                         idle();
                     }
                     // Now unlatch the hook
-                    encoderDrive(0,500,0.3);
+                    encoderDrive(0, 500, 0.3);
                     // Lower the hook
                     robot.collector.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     robot.collector.setTargetPosition(0);
                     robot.collector.setPower(1.0f);
 
-                    encoderDrive(-500,0,0.3);
+                    encoderDrive(-500, 0, 0.3);
                     //encoderDrive(200,0,0.3);
                     //encoderDrive(0,-200,0.3);
 
@@ -309,15 +330,19 @@ if (tri_state == 1) {
 
                 case 5: // Drive using the TimeOfFlight sensor
                     if (robot.sensorAxis != null) {
-                        if ( (leftArray[v_state_current] + rightArray[v_state_current])*rightArray[v_state_current] == 0 ) { servoPOS = servoPOS1; } else { servoPOS = servoPOS2; }
-                        if (Math.abs(robot.sensorAxis.getPosition()-servoPOS) > 0.05 ) {
+                        if ((leftArray[v_state_current] + rightArray[v_state_current]) * rightArray[v_state_current] == 0) {
+                            servoPOS = servoPOS1;
+                        } else {
+                            servoPOS = servoPOS2;
+                        }
+                        if (Math.abs(robot.sensorAxis.getPosition() - servoPOS) > 0.05) {
                             robot.sensorAxis.setPosition(servoPOS);
-                            if (robot.teamID == 15555) {
+                            if (robot.teamID == "15555") {
                                 robot.collector.setTargetPosition(0);
                                 robot.collector.setPower(1.0f);
                             }
                             sleep(500);
-                            if (robot.teamID == 15555) robot.collector.setPower(0.0f);
+                            if (robot.teamID == "15555") robot.collector.setPower(0.0f);
                         }
 
                     }
@@ -340,14 +365,14 @@ if (tri_state == 1) {
                     NormalizedRGBA colors = robot.colorSensor.getNormalizedColors();
                     int color = colors.toColor();
                     float max = Math.max(Math.max(Math.max(colors.red, colors.green), colors.blue), colors.alpha);
-                    colors.red   /= max;
+                    colors.red /= max;
                     colors.green /= max;
-                    colors.blue  /= max;
+                    colors.blue /= max;
                     color = colors.toColor();
-                    if ( (Color.red(color)*100/Color.blue(color)) > timeArray[v_state_current] ) {
+                    if ((Color.red(color) * 100 / Color.blue(color)) > timeArray[v_state_current]) {
                         encoderDrive(0, 500, 0.2);
                         encoderDrive(0, -600, 0.2);
-                        v_state_current += (int)(leftArray[v_state_current]);
+                        v_state_current += (int) (leftArray[v_state_current]);
                     }
                     v_state_current++;
                     break;
@@ -359,13 +384,17 @@ if (tri_state == 1) {
                     break;
 
                 case 12:
-                    encoderDrive(3500,0,0.5);
+                    encoderDrive(3500, 0, 0.5);
                     robot.armExtend.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     robot.armExtend.setTargetPosition(75);
                     robot.armExtend.setPower(0.3f);
                     if (robot.armMove != null) {
                         robot.armMove.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                        if (robot.teamID == 10645) {robot.armMove.setTargetPosition(4500); } else {robot.armMove.setTargetPosition(5500);}
+                        if (robot.teamID == "10645") {
+                            robot.armMove.setTargetPosition(4500);
+                        } else {
+                            robot.armMove.setTargetPosition(5500);
+                        }
                         robot.armMove.setPower(Math.abs(0.2));
 
                         while (opModeIsActive() && robot.armMove.isBusy()) {
@@ -377,9 +406,13 @@ if (tri_state == 1) {
                         }
                     }
 
-                    robot.armExtend.setTargetPosition(robot.armExtend.getCurrentPosition()-75);
+                    robot.armExtend.setTargetPosition(robot.armExtend.getCurrentPosition() - 75);
                     robot.armExtend.setPower(0.2f);
-                    if (robot.teamID == 10645) {robot.collector.setPower(-1); } else {                        robot.collector.setPower(1); }
+                    if (robot.teamID == "10645") {
+                        robot.collector.setPower(-1);
+                    } else {
+                        robot.collector.setPower(1);
+                    }
                     sleep(2000);
                     robot.collector.setPower(0);
 
@@ -405,7 +438,9 @@ if (tri_state == 1) {
                     robot.armExtend.setPower(0.3f);
                     if (robot.armMove != null) {
                         robot.armMove.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                        {robot.armMove.setTargetPosition(5500); }
+                        {
+                            robot.armMove.setTargetPosition(5500);
+                        }
                         robot.armMove.setPower(Math.abs(0.2));
 
                         while (opModeIsActive() && robot.armMove.isBusy()) {
@@ -417,14 +452,16 @@ if (tri_state == 1) {
                         }
                     }
 
-                    robot.armExtend.setTargetPosition(robot.armExtend.getCurrentPosition()-75);
+                    robot.armExtend.setTargetPosition(robot.armExtend.getCurrentPosition() - 75);
                     robot.armExtend.setPower(0.2f);
-                    {robot.collector.setPower(-0.5); }
-                    sleep(2000);
-                    robot.collector.setPower(0);
+                {
+                    robot.collector.setPower(-0.5);
+                }
+                sleep(2000);
+                robot.collector.setPower(0);
 
-                    robot.armMove.setTargetPosition(0);
-                    robot.armMove.setPower(Math.abs(0.3));
+                robot.armMove.setTargetPosition(0);
+                robot.armMove.setPower(Math.abs(0.3));
                 while (opModeIsActive() && robot.armMove.isBusy()) {
 
                     float aePos = (int) (Range.clip(robot.armMove.getCurrentPosition(), 0, 5500) / 7.11);
@@ -433,12 +470,51 @@ if (tri_state == 1) {
 
                 }
 
+                v_state_current++;
+                break;
+
+                case 55:
+                    /** Activate Tensor Flow Object Detection. */
+                    if (tfod != null) {
+                        tfod.activate();
+                        List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+                        if (updatedRecognitions != null) {
+                            //telemetry.addData("# Object Detected", updatedRecognitions.size());
+                            if (updatedRecognitions.size() == 3) {
+                                int goldMineralX = -1;
+                                int silverMineral1X = -1;
+                                int silverMineral2X = -1;
+                                for (Recognition recognition : updatedRecognitions) {
+                                    if (recognition.getLabel().equals(LABEL_GOLD_MINERAL)) {
+                                        goldMineralX = (int) recognition.getLeft();
+                                    } else if (silverMineral1X == -1) {
+                                        silverMineral1X = (int) recognition.getLeft();
+                                    } else {
+                                        silverMineral2X = (int) recognition.getLeft();
+                                    }
+                                }
+                                if (goldMineralX != -1 && silverMineral1X != -1 && silverMineral2X != -1) {
+                                    if (goldMineralX < silverMineral1X && goldMineralX < silverMineral2X) {
+                                        leftArray[v_state_current] -= 25;
+                                        rightArray[v_state_current] +=25;
+                                        //telemetry.addData("Gold Mineral Position", "Left");
+                                    } else if (goldMineralX > silverMineral1X && goldMineralX > silverMineral2X) {
+                                        //telemetry.addData("Gold Mineral Position", "Right");
+                                    } else {
+                                        leftArray[v_state_current] += 25;
+                                        rightArray[v_state_current] -=25;
+                                        //telemetry.addData("Gold Mineral Position", "Center");
+                                    }
+                                }
+                            }
+                            //telemetry.update();
+                        }
+                        tfod.shutdown();
+
+                    }
                     v_state_current++;
                     break;
-
-
             }
-
 
 /*
 case 2: // Arm Up & Slide Retract
@@ -1009,6 +1085,36 @@ idle();
         robot.frontLeftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         robot.rearRightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         robot.rearLeftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
+
+    /**
+     * Initialize the Vuforia localization engine.
+     */
+    private void initVuforia() {
+        /*
+         * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
+         */
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+
+        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+        parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
+        //parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
+
+        //  Instantiate the Vuforia engine
+        vuforia = ClassFactory.getInstance().createVuforia(parameters);
+
+        // Loading trackables is not necessary for the Tensor Flow Object Detection engine.
+    }
+
+    /**
+     * Initialize the Tensor Flow Object Detection engine.
+     */
+    private void initTfod() {
+        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
+                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_GOLD_MINERAL, LABEL_SILVER_MINERAL);
     }
 
 /*

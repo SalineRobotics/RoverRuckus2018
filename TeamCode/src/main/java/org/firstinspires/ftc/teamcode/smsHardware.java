@@ -65,7 +65,7 @@ public class smsHardware
     public NormalizedColorSensor colorSensor = null;
     public DistanceSensor sensorRange; // used for 2m
     public DistanceSensor colorRange; // used for REV Distance+Color sensor
-    public int teamID = 0;
+    public String teamID = "";
 
     public BNO055IMU imu = null;
 
@@ -78,24 +78,22 @@ public class smsHardware
             // Initialize the bot-specific color sensor
             try
             {
-                colorSensor = ahwMap.get(NormalizedColorSensor.class, "cs10644");
-                teamID = 10644;
+                sensorRange = ahwMap.get(DistanceSensor.class, "2m10644");
+                teamID = "10644";
             }
             catch (Exception p_exception) { };
 
             try
             {
-                colorSensor = ahwMap.get(NormalizedColorSensor.class, "cs10645");
-                teamID = 10645;
+                sensorRange = ahwMap.get(DistanceSensor.class, "2m10645");
+                teamID = "10645";
             }
             catch (Exception p_exception) { };
 
             try
             {
-                colorSensor = ahwMap.get(NormalizedColorSensor.class, "cs15555");
-                colorRange = ahwMap.get(DistanceSensor.class, "cs15555");
-
-                teamID = 15555;
+                sensorRange = ahwMap.get(DistanceSensor.class, "2m15555");
+                teamID = "15555";
             }
             catch (Exception p_exception) { };
 
@@ -110,11 +108,7 @@ public class smsHardware
                 imu.initialize(parameters);
             } catch (Exception p_exception) { };
 
-            try
-            {
-                sensorRange = ahwMap.get(DistanceSensor.class, "2m");
-            }
-            catch (Exception p_exception) { };
+
 
             try
             {
